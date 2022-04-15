@@ -1,49 +1,50 @@
-use core::panic;
-
-use std::net::ToSocketAddrs;
-// use std::time::Duration;
-
 use clap::StructOpt;
+use std::net::SocketAddr;
+use std::net::ToSocketAddrs;
+use tokio::io;
 use tokio::net::TcpListener;
-// use tokio::time::timeout;
-use tokio::{io, net::TcpSocket};
+use tokio::net::TcpStream;
+
 mod cli;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args = cli::Cli::parse();
-    let listener = TcpListener::bind((args.local_host, args.local_port)).await?;
-    let mut addrs = ((args.remote_host, args.remote_port)).to_socket_addrs()?;
-    let remote_addr = match addrs.next() {
-        Some(remote_addr) => remote_addr,
-        None => panic!("Not able to resolve remove remote addr"),
-    };
-    let socket_type = if remote_addr.is_ipv4() {
-        TcpSocket::new_v4
-    } else {
-        TcpSocket::new_v6
-    };
+    let local_addr: SocketAddr = args
+        .local_host
+        .to_socket_addrs()?
+        .next()
+        .expect("local_addr is not in `host:port`");
+    let listener: TcpListener = TcpListener::bind(local_addr).await?;
+    println!("proxying {} to {}", args.local_host, args.remote_host);
 
     loop {
         let socket = listener.accept().await;
+        let remote_addr = args.remote_host.to_string();
         match socket {
             Ok((local_stream, client_addr)) => {
                 println!("Recieved new connection: {}", client_addr);
-                tokio::spawn(async move {
-                    let socket = socket_type().unwrap();
-                    let remote_stream = socket.connect(remote_addr).await.unwrap();
-                    let (mut local_read, mut local_write) = io::split(local_stream);
-                    let (mut remote_read, mut remote_write) = io::split(remote_stream);
-                    tokio::select! {
-                        _=io::copy(&mut local_read, &mut remote_write)=>{}
-                        _=io::copy(&mut remote_read,&mut local_write)=>{}
-                    }
-                    println!("connection: {:?} is closed", client_addr);
-                });
+                tokio::spawn(proxy(remote_addr, local_stream, client_addr));
             }
             Err(err) => {
-                println!("error is {err}")
+                eprintln!("error is {err}")
             }
         }
     }
+}
+
+async fn proxy(
+    remote_addr: String,
+    local_stream: TcpStream,
+    client_addr: SocketAddr,
+) -> anyhow::Result<()> {
+    let remote_stream = TcpStream::connect(remote_addr).await?;
+    let (mut local_read, mut local_write) = io::split(local_stream);
+    let (mut remote_read, mut remote_write) = io::split(remote_stream);
+    tokio::select! {
+        _ = io::copy(&mut local_read, &mut remote_write) => {}
+        _ = io::copy(&mut remote_read,&mut local_write) => {}
+    }
+    println!("connection: {:?} is closed", client_addr);
+    Ok(())
 }
