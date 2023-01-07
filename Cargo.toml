@@ -6,9 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { features = ["full"], version = "1.18.4" }
-clap = { features = ["derive"], version = "3.1.8" }
-anyhow = "1.0.56"
+tokio = { features = ["rt-multi-thread", "net", "macros", "io-util"], version = "1" }
+clap = { features = ["derive"], version = "3" }
+anyhow = "1"
 
 [[bin]]
 name = "tcp-relay-rust"
