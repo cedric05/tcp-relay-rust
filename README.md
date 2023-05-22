@@ -24,3 +24,12 @@ To try:
 
 - start relay service: `./target/release/tcp-relay-rust /var/run/docker.sock localhost:3333` (danger, its not safe to share docker.sock)
 - invoke sample request by `curl localhost:3333`
+
+### Std Example
+
+- start relay service: `./target/release/tcp-relay-rust /var/run/docker.sock ` (danger, its not safe to share docker.sock)
+- type below text. (docker.sock will respond with text)
+"""
+GET /containers/json HTTP/1.1
+Host: localhost:3333
+"""

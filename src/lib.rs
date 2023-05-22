@@ -111,10 +111,10 @@ impl Socket {
             };
             let remote_stream = match remote.clone().connect().await {
                 Ok(remote_stream) => remote_stream,
-                Err(accept_error) => {
+                Err(connect_error) => {
                     println!(
                         "connecting to remote socket failed with error {}",
-                        accept_error
+                        connect_error
                     );
                     continue;
                 }
@@ -122,6 +122,48 @@ impl Socket {
             tokio::spawn(socket_stream.proxy(remote_stream));
         }
     }
+}
+
+pub enum StdOrSocket {
+    Socket(Socket),
+    Std,
+}
+
+impl StdOrSocket {
+    pub async fn run(self, remote: Socket) -> anyhow::Result<()> {
+        match self {
+            StdOrSocket::Socket(local) => Ok(local.run(remote).await?),
+            StdOrSocket::Std => {
+                let stdin = tokio::io::stdin();
+                let stdout = tokio::io::stdout();
+                let connect = remote.connect().await;
+                if connect.is_err() {
+                    println!("unable to connecto remote host");
+                }
+                let sockstream = connect?;
+                match sockstream {
+                    #[cfg(unix)]
+                    SocketStream::Unix(unixstream) => proxy_std(stdin, stdout, unixstream).await,
+                    SocketStream::Tcp(tcpstream) => proxy_std(stdin, stdout, tcpstream).await,
+                };
+                Ok(())
+            }
+        }
+    }
+}
+
+pub async fn proxy_std<T1, T2, T3>(mut read: T1, mut write: T2, other: T3)
+where
+    T1: AsyncRead + Unpin,
+    T2: AsyncWrite + Unpin,
+    T3: AsyncRead + Unpin + AsyncWrite,
+{
+    let (mut read_2, mut write_2) = io::split(other);
+    tokio::select! {
+        _=io::copy(&mut read, &mut write_2)=>{},
+        _=io::copy(&mut read_2, &mut write)=>{}
+    }
+    println!("closing connection");
 }
 
 pub async fn proxy<T1, T2>(s1: T1, s2: T2)
