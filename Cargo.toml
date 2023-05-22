@@ -2,6 +2,10 @@
 name = "tcp-relay-rust"
 version = "0.1.0"
 edition = "2021"
+authors = ["Shiva Prasanth <kesavarapu.siva@gmail.com>"]
+description = "Simple `tcp-relay` command (can create proxy to tcp and unix socket)."
+license = "MIT OR Apache-2.0"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -18,4 +22,4 @@ anyhow = "1"
 
 [[bin]]
 name = "tcp-relay-rust"
-path = "src/bin/proxy.rs"
+path = "src/bin/proxy/main.rs"

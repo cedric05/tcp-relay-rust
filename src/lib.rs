@@ -9,8 +9,6 @@ use tokio::io::AsyncRead;
 use tokio::io::AsyncWrite;
 use tokio::net::{TcpListener, TcpStream};
 
-pub mod cli;
-
 #[derive(Clone)]
 pub enum Socket {
     #[cfg(unix)]
