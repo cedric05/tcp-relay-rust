@@ -1,6 +1,8 @@
-use clap::StructOpt;
-mod cli;
+use clap::Parser as _;
+
 use tcp_relay_rust::{RelayError, Socket, StdOrSocket};
+
+mod cli;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<RelayError>> {

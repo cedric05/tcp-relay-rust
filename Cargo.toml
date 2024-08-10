@@ -17,7 +17,7 @@ tokio = { features = [
     "io-util",
     "io-std",
 ], version = "1" }
-clap = { features = ["derive"], version = "3" }
+clap = { features = ["derive"], version = "4" }
 anyhow = "1"
 
 [[bin]]

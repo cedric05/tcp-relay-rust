@@ -136,7 +136,7 @@ impl StdOrSocket {
                 let stdout = tokio::io::stdout();
                 let connect = remote.connect().await;
                 if connect.is_err() {
-                    println!("unable to connecto remote host");
+                    println!("unable to connect to remote host");
                 }
                 let sockstream = connect?;
                 match sockstream {
